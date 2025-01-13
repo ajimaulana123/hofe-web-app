@@ -1,10 +1,5 @@
-declare namespace App {
-  interface Locals {
-    userid: string;
+declare namespace NodeJS {
+  interface ProcessEnv {
+    NEXT_PUBLIC_API_URL: string;
   }
-  interface Platform {}
-  interface PrivateEnv {
-    API_URL: string;
-  }
-  interface PublicEnv {}
 } 
