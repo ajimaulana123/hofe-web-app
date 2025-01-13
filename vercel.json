@@ -1,0 +1,22 @@
+{
+  "version": 2,
+  "builds": [
+    {
+      "src": "package.json",
+      "use": "@vercel/next"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/(.*)",
+      "dest": "/"
+    }
+  ],
+  "env": {
+    "NEXT_PUBLIC_API_URL": "https://api-cc-hofe.vercel.app"
+  },
+  "github": {
+    "silent": true
+  },
+  "framework": "nextjs"
+} 
