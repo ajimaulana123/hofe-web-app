@@ -2,139 +2,163 @@
 
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
+import { Textarea } from "@/components/ui/textarea"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { useToast } from "@/components/ui/use-toast"
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { newsService } from "@/lib/services/news"
-import { AlertCircle, CheckCircle2, Link, Type } from "lucide-react"
+import { Loader2 } from "lucide-react"
+
+type TextResult = {
+  text: string
+  prediction: string
+}
+
+type UrlResult = {
+  url: string
+  prediction: string
+  cleaned_content?: string
+}
 
 export function DetectorForm() {
   const [text, setText] = useState("")
   const [url, setUrl] = useState("")
   const [loading, setLoading] = useState(false)
-  const [result, setResult] = useState<any>(null)
-  const { toast } = useToast()
+  const [textResult, setTextResult] = useState<TextResult | null>(null)
+  const [urlResult, setUrlResult] = useState<UrlResult | null>(null)
+  const [error, setError] = useState<string | null>(null)
 
-  const handleTextCheck = async (e: React.FormEvent) => {
+  const handleTextSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!text.trim()) {
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "Please enter text to check",
-      })
-      return
-    }
+    if (!text.trim()) return
 
     try {
       setLoading(true)
+      setError(null)
+      setUrlResult(null) // Reset URL result
       const response = await newsService.predictText(text)
-      setResult(response)
-    } catch (error: any) {
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: error.message || "Failed to check text",
-      })
+      
+      if (response.success) {
+        setTextResult({
+          text: response.text,
+          prediction: response.prediction
+        })
+      } else {
+        setError(response.error)
+      }
+    } catch (err: any) {
+      setError(err.message)
     } finally {
       setLoading(false)
     }
   }
 
-  const handleUrlCheck = async (e: React.FormEvent) => {
+  const handleUrlSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!url.trim()) {
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "Please enter URL to check",
-      })
-      return
-    }
+    if (!url.trim()) return
 
     try {
       setLoading(true)
+      setError(null)
+      setTextResult(null)
       const response = await newsService.predictUrl(url)
-      setResult(response)
-    } catch (error: any) {
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: error.message || "Failed to check URL",
+      
+      setUrlResult({
+        url: url,
+        prediction: String(response.result),
+        cleaned_content: response.cleaned_content
       })
+    } catch (err: any) {
+      setError(err.message)
     } finally {
       setLoading(false)
     }
   }
 
   return (
-    <div className="grid gap-6 md:grid-cols-2">
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center space-x-2">
-            <Type className="h-5 w-5" />
-            <span>Check by Text</span>
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleTextCheck} className="space-y-4">
-            <Input
-              placeholder="Enter news text"
+    <div className="space-y-4">
+      <Tabs defaultValue="text">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="text">Analisis Teks</TabsTrigger>
+          <TabsTrigger value="url">Analisis URL</TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="text">
+          <form onSubmit={handleTextSubmit} className="space-y-4">
+            <Textarea
               value={text}
               onChange={(e) => setText(e.target.value)}
+              placeholder="Masukkan teks yang ingin dianalisis..."
               className="min-h-[100px]"
             />
-            <Button type="submit" disabled={loading} className="w-full">
-              {loading ? "Checking..." : "Check Text"}
+            <Button type="submit" disabled={loading || !text.trim()}>
+              {loading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Menganalisis...
+                </>
+              ) : (
+                "Analisis Teks"
+              )}
             </Button>
           </form>
-        </CardContent>
-      </Card>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center space-x-2">
-            <Link className="h-5 w-5" />
-            <span>Check by URL</span>
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleUrlCheck} className="space-y-4">
+          {textResult && (
+            <Card className="mt-4">
+              <CardHeader>
+                <CardTitle>Hasil Analisis Teks</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                <p><strong>Teks:</strong> {textResult.text}</p>
+                <p><strong>Prediksi:</strong> {textResult.prediction}</p>
+              </CardContent>
+            </Card>
+          )}
+        </TabsContent>
+
+        <TabsContent value="url">
+          <form onSubmit={handleUrlSubmit} className="space-y-4">
             <Input
-              placeholder="Enter news URL"
+              type="url"
               value={url}
               onChange={(e) => setUrl(e.target.value)}
+              placeholder="Masukkan URL yang ingin dianalisis..."
             />
-            <Button type="submit" disabled={loading} className="w-full">
-              {loading ? "Checking..." : "Check URL"}
+            <Button type="submit" disabled={loading || !url.trim()}>
+              {loading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Menganalisis...
+                </>
+              ) : (
+                "Analisis URL"
+              )}
             </Button>
           </form>
-        </CardContent>
-      </Card>
 
-      {result && (
-        <Card className="md:col-span-2">
-          <CardHeader>
-            <CardTitle className="flex items-center space-x-2">
-              {result.prediction === "REAL" ? (
-                <CheckCircle2 className="h-5 w-5 text-green-500" />
-              ) : (
-                <AlertCircle className="h-5 w-5 text-red-500" />
-              )}
-              <span>Result</span>
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2">
-              <p className="text-lg font-medium">
-                Prediction: {result.prediction}
-              </p>
-              <p className="text-sm text-muted-foreground">
-                Confidence: {result.confidence}%
-              </p>
-            </div>
-          </CardContent>
-        </Card>
+          {urlResult && (
+            <Card className="mt-4">
+              <CardHeader>
+                <CardTitle>Hasil Analisis URL</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                <p><strong>URL:</strong> {urlResult.url}</p>
+                <p><strong>Prediksi:</strong> {urlResult.prediction}</p>
+                {urlResult.cleaned_content && (
+                  <p><strong>Konten:</strong> {urlResult.cleaned_content}</p>
+                )}
+              </CardContent>
+            </Card>
+          )}
+        </TabsContent>
+      </Tabs>
+
+      {error && (
+        <Alert variant="destructive">
+          <AlertTitle>Error</AlertTitle>
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
       )}
     </div>
   )
