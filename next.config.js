@@ -13,7 +13,7 @@ const nextConfig = {
     return [
       {
         source: '/:path*',
-        destination: 'https://api-cc-hofe.vercel.app/:path*'
+        destination: 'https://api-cc-hofe-production.up.railway.app/:path*',
       }
     ]
   },
