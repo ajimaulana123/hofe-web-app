@@ -12,15 +12,15 @@ const nextConfig = {
   async rewrites() {
     return [
       {
-        source: '/api/:path*',
-        destination: 'https://api-cc-hofe.vercel.app/api/:path*'
+        source: '/:path*',
+        destination: 'https://api-cc-hofe.vercel.app/:path*'
       }
     ]
   },
   async headers() {
     return [
       {
-        source: '/api/:path*',
+        source: '/:path*',
         headers: [
           { key: 'Access-Control-Allow-Credentials', value: 'true' },
           { key: 'Access-Control-Allow-Origin', value: '*' },
